@@ -55,6 +55,11 @@ a.ext::after{content:"\f35d";font-family:"Font Awesome 6 Free";font-weight:900;f
 #doc div.nb{margin-bottom:1rem}
 #doc pre{background:var(--bs-tertiary-bg);padding:.6rem;border-radius:.3rem;font-size:.85rem;margin:0}
 #doc table{font-size:.88rem;margin-bottom:0}
+/* fargede tabellceller ({grønn}/{gul}/{rød} i Markdown) */
+#doc table td.cell-gronn,#doc table th.cell-gronn{background-color:var(--bs-success-bg-subtle)}
+#doc table td.cell-gul,#doc table th.cell-gul{background-color:var(--bs-warning-bg-subtle)}
+#doc table td.cell-rod,#doc table th.cell-rod{background-color:var(--bs-danger-bg-subtle)}
+@media print{#doc table .cell-gronn,#doc table .cell-gul,#doc table .cell-rod{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 .fm-box summary,.hidden-meta summary{cursor:pointer}
 .fm-box th{white-space:nowrap;width:1%}
 .hidden-meta{border-color:var(--bs-warning-border-subtle)}

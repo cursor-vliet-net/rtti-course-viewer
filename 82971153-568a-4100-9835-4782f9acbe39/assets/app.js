@@ -166,10 +166,13 @@ function quizOptsMd(ul){
     return '- [' + (li.classList.contains('is-correct') ? 'x' : ' ') + '] ' + s + (e ? ' | ' + e : '');
   }).join('\n');
 }
+/* Fargede tabellceller: klassen blir merket {grønn}/{gul}/{rød} igjen (se QUIZ-FORMAT.md) */
+var CELL_MARK = {'cell-gronn': 'grønn', 'cell-gul': 'gul', 'cell-rod': 'rød'};
+function cellMark(c){ for (var k in CELL_MARK) if (c.classList.contains(k)) return ' {' + CELL_MARK[k] + '}'; return ''; }
 function table(tb){
   var rows = $$('tr', tb).filter(function(r){ return r.closest('table') === tb && !SKIP.test(r.className || ''); }), out = [];
   rows.forEach(function(r, i){
-    var cells = $$(':scope > th, :scope > td', r).map(function(c){ return cleanPara(inl(c)).replace(/\|/g, '\\|').replace(/\n/g, '<br>'); });
+    var cells = $$(':scope > th, :scope > td', r).map(function(c){ return cleanPara(inl(c)).replace(/\|/g, '\\|').replace(/\n/g, '<br>') + cellMark(c); });
     out.push('| ' + cells.join(' | ') + ' |');
     if (i === 0) out.push('|' + cells.map(function(){ return ' --- '; }).join('|') + '|');
   });
@@ -179,7 +182,7 @@ function htmlToMd(node){ return blocks(node, '\n\n').replace(/[ \t]+\n/g, '\n').
 
 /* ---------- rensing av lagret HTML ---------- */
 var OK_TAGS = /^(B|STRONG|I|EM|S|DEL|U|MARK|CODE|A|BR|SPAN|P|DIV|UL|OL|LI|TABLE|THEAD|TBODY|TR|TH|TD|BLOCKQUOTE|PRE|SUP|SUB|IMG|HR)$/;
-var OK_ATTR = {A: ['href', 'target', 'rel', 'class', 'title'], IMG: ['src', 'alt', 'class', 'loading'], TH: ['colspan', 'rowspan'], TD: ['colspan', 'rowspan'], OL: ['start']};
+var OK_ATTR = {A: ['href', 'target', 'rel', 'class', 'title'], IMG: ['src', 'alt', 'class', 'loading'], TH: ['colspan', 'rowspan', 'class'], TD: ['colspan', 'rowspan', 'class'], OL: ['start']};
 function sanitizeNode(n){
   $$('*', n).reverse().forEach(function(el){
     if (!OK_TAGS.test(el.tagName)) { if (/^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|TEMPLATE)$/.test(el.tagName)) el.remove(); else el.replaceWith.apply(el, Array.prototype.slice.call(el.childNodes)); return; }
