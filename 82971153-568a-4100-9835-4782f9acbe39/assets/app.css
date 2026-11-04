@@ -48,6 +48,17 @@ h1.doc-title{font-size:1.75rem;margin-bottom:1rem}
 .cm-btn .cm-count{font-size:.65rem;font-weight:700;margin-left:1px}
 .nb.has-cm{background:var(--bs-warning-bg-subtle);border-radius:.2rem}
 #doc img{max-height:520px}
+#doc{display:flow-root}
+#doc .nb-fig img{float:right;clear:right;width:auto;height:auto;max-width:40%;max-height:18rem;object-fit:contain;margin:.25rem 0 1rem 1.25rem}
+#doc .nb-fig img.broken{min-width:120px;min-height:60px}
+#doc .nb-fig img{clear:both}
+#doc .nb-fig img.img-left{float:left;margin:.25rem 1.25rem 1rem 0}
+#doc .nb-fig img.img-full{float:none;display:block;max-width:100%;max-height:28rem;margin:.5rem auto 1rem}
+#doc h1,#doc h2,#doc h3,#doc h4,#doc h5,#doc h6,#doc .nb-tbl,#doc .table-responsive,#doc div.quiz,#doc pre,#doc hr,#doc .hidden-meta{clear:both}
+#doc .nb-fig.has-cm{background:none}
+#doc .nb-fig.has-cm img{outline:3px solid var(--bs-warning);outline-offset:2px}
+@media (max-width:575.98px){#doc .nb-fig img{float:none;display:block;max-width:100%;max-height:22rem;margin:.5rem auto 1rem}#doc .nb-fig img.img-left,#doc .nb-fig img.img-right,#doc .nb-fig img.img-full{float:none;display:block;max-width:100%;max-height:22rem;margin:.5rem auto 1rem}}
+@media print{#doc .nb-fig img{max-width:40%;max-height:9cm;break-inside:avoid;page-break-inside:avoid}#doc .nb-fig img.img-full{max-width:100%;max-height:12cm}#doc h2,#doc h3{break-after:avoid;page-break-after:avoid}}
 #doc img.broken{outline:2px dashed var(--bs-danger);min-width:60px;min-height:30px}
 a.broken{color:var(--bs-danger);text-decoration:line-through}
 a.ext::after{content:"\f35d";font-family:"Font Awesome 6 Free";font-weight:900;font-size:.6em;margin-left:.25em;vertical-align:super}
@@ -150,3 +161,17 @@ body.edit-mode li.quiz-opt{cursor:text}
 .quiz-q.editing .quiz-radio,.quiz-q.editing .quiz-note,.quiz-q.editing .quiz-mark{display:none}
 .quiz-q.editing .quiz-opt.is-correct>.quiz-txt::after{content:"\f058";font-family:"Font Awesome 6 Free";font-weight:900;color:var(--bs-success);margin-left:.4rem}
 @media print{.quiz-radio,.quiz-actions,.quiz-note{display:none!important}.quiz-expl{display:block}}
+/* lysboks for bilder (leser 1.7) */
+#doc img:not(.broken){cursor:zoom-in}
+body.edit-mode #doc .nb-body[contenteditable="true"] img:not(.broken){cursor:zoom-in}
+.lb{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;padding:1rem;overscroll-behavior:contain;cursor:zoom-out}
+.lb[hidden]{display:none}
+.lb-fig{margin:0;display:flex;flex-direction:column;align-items:center;max-width:95vw;max-height:100%;cursor:default}
+.lb-img{display:block;max-width:95vw;max-height:90vh;width:auto;height:auto;object-fit:contain;background:#fff;border-radius:.2rem;box-shadow:0 .5rem 2rem rgba(0,0,0,.5)}
+.lb-cap{color:#f1f1f1;font-size:.9rem;line-height:1.35;text-align:center;margin-top:.5rem;max-width:95vw}
+.lb-cap[hidden]{display:none}
+.lb-close{position:fixed;top:.6rem;right:.6rem;width:2.6rem;height:2.6rem;border:0;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;font-size:1.4rem;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1}
+.lb-close:hover,.lb-close:focus-visible{background:rgba(255,255,255,.3);outline:2px solid #fff;outline-offset:2px}
+html.lb-open,html.lb-open body,html.lb-open #content{overflow:hidden!important}
+html.lb-open body{touch-action:pinch-zoom}
+@media print{.lb{display:none!important}}

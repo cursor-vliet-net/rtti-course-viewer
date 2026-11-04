@@ -117,7 +117,7 @@ function inlNode(ch){
     case 'S': case 'DEL': case 'STRIKE': return wrapMark(inl(ch), '~~');
     case 'CODE': return '`' + ch.textContent + '`';
     case 'BR': return '\n';
-    case 'IMG': return '![' + (ch.getAttribute('alt') || '') + '](' + (ch.getAttribute('src') || '') + ')';
+    case 'IMG': return '![' + (ch.getAttribute('alt') || '') + '](' + (ch.getAttribute('src') || '') + ')' + imgMark(ch);
     case 'SUP': if (/footnote-ref/.test(ch.className)) return '[^' + ch.textContent.replace(/[\[\]\s]/g, '') + ']'; return inl(ch);
     case 'A':
       if (/(^|\s)(codelink|footnote-backref)(\s|$)/.test(ch.className)) return inl(ch);
@@ -166,6 +166,8 @@ function quizOptsMd(ul){
     return '- [' + (li.classList.contains('is-correct') ? 'x' : ' ') + '] ' + s + (e ? ' | ' + e : '');
   }).join('\n');
 }
+/* Bildeplassering: klassen img-left/img-right/img-full blir merket {left}/{right}/{full} igjen (leser 1.6) */
+function imgMark(im){ var m = (im.className || '').match(/(?:^|\s)img-(left|right|full)(?:\s|$)/); return m ? '{' + m[1] + '}' : ''; }
 /* Fargede tabellceller: klassen blir merket {grønn}/{gul}/{rød} igjen (se QUIZ-FORMAT.md) */
 var CELL_MARK = {'cell-gronn': 'grønn', 'cell-gul': 'gul', 'cell-rod': 'rød'};
 function cellMark(c){ for (var k in CELL_MARK) if (c.classList.contains(k)) return ' {' + CELL_MARK[k] + '}'; return ''; }
@@ -256,7 +258,7 @@ function prepare(el){
 }
 function render(id){
   if (ED) finishEdit();
-  hideLinkPop();
+  hideLinkPop(); closeLightbox();
   var d = V.docs[id]; current = id; ORIG = {};
   var cr = '<nav aria-label="brødsmulesti"><ol class="breadcrumb small mb-2">';
   cr += '<li class="breadcrumb-item"><a href="#d-' + esc(V.start) + '" title="Start"><i class="fa-solid fa-house"></i></a></li>';
@@ -272,7 +274,7 @@ function render(id){
   Object.keys(c).forEach(function(a){ if (c[a].ch && ORIG[a]) applyItem(document.getElementById(a), c); });
   hydrateQuiz(art);
   refreshRemovals(c);
-  updateCounts(); markNav(id);
+  updateCounts(); markNav(id); lbPrep(art);
   document.title = d.t + ' - RTTI-kurs';
   scroller().scrollTop = 0;
 }
@@ -1143,6 +1145,74 @@ $('#searchBox').addEventListener('input', function(){ clearTimeout(sT); sT = set
 $('#searchScope').addEventListener('change', doSearch);
 $('#searchResults').addEventListener('click', function(ev){ if (ev.target.closest('a')) closeNavMobile(); });
 document.addEventListener('keydown', function(ev){ var ae = document.activeElement; if (ev.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(ae.tagName) && !ae.isContentEditable) { ev.preventDefault(); $('#searchBox').focus(); } });
+
+/* ---------- lysboks for bilder (leser 1.7) ---------- */
+/* Klikk (eller Enter) på et bilde i teksten viser det forstørret over en mørk bakgrunn, med alt-teksten under.
+   Lukk med X, Esc eller klikk på bakgrunnen. Klikket fanges før redigering, kommentarer og quiz, så et klikk på
+   et bilde i redigeringsmodus starter ikke redigering. Ingen eksterne biblioteker. */
+var LB = null, lbBack = null;
+function lbEl(){
+  if (LB) return LB;
+  LB = document.createElement('div'); LB.id = 'lightbox'; LB.className = 'lb'; LB.hidden = true;
+  LB.setAttribute('role', 'dialog'); LB.setAttribute('aria-modal', 'true'); LB.setAttribute('aria-label', 'Forstørret bilde');
+  LB.innerHTML = '<button type="button" class="lb-close" aria-label="Lukk forstørret bilde" title="Lukk (Esc)"><i class="fa-solid fa-xmark" aria-hidden="true"></i><span class="visually-hidden">Lukk</span></button>'
+    + '<figure class="lb-fig"><img class="lb-img" alt=""><figcaption class="lb-cap"></figcaption></figure>';
+  document.body.appendChild(LB);
+  LB.addEventListener('click', function(ev){
+    ev.stopPropagation();
+    if (ev.target.closest('.lb-close') || !ev.target.closest('.lb-img, .lb-cap')) closeLightbox();
+  });
+  return LB;
+}
+/* Små bilder skaleres opp (høyst 2 ganger) til de fyller 95vw × 90vh; store bilder krympes av CSS. */
+function lbFit(){
+  if (!LB || LB.hidden) return;
+  var big = LB.querySelector('.lb-img'), nw = big.naturalWidth, nh = big.naturalHeight;
+  big.style.width = '';
+  if (!nw || !nh) return;
+  var k = Math.min(window.innerWidth * 0.95 / nw, window.innerHeight * 0.9 / nh, 2);
+  if (k > 1) big.style.width = Math.floor(nw * k) + 'px';
+}
+window.addEventListener('resize', lbFit);
+function lbImg(t){
+  var im = t && t.closest && t.closest('#doc img');
+  return im && !im.classList.contains('broken') && !im.closest('a') ? im : null;
+}
+function openLightbox(im){
+  var lb = lbEl(), big = lb.querySelector('.lb-img'), cap = lb.querySelector('.lb-cap'), alt = im.getAttribute('alt') || '';
+  lbBack = im.tabIndex >= 0 ? im : (document.activeElement && document.activeElement !== document.body ? document.activeElement : null);
+  big.style.width = ''; big.onload = lbFit;
+  big.src = im.currentSrc || im.src; big.alt = alt; if (big.complete) lbFit(); cap.textContent = alt; cap.hidden = !alt;
+  lb.setAttribute('aria-label', alt ? 'Forstørret bilde: ' + alt : 'Forstørret bilde');
+  lb.hidden = false; document.documentElement.classList.add('lb-open');
+  lb.querySelector('.lb-close').focus();
+}
+function closeLightbox(){
+  if (!LB || LB.hidden) return;
+  LB.hidden = true; document.documentElement.classList.remove('lb-open');
+  LB.querySelector('.lb-img').removeAttribute('src');
+  var b = lbBack; lbBack = null;
+  if (b && document.contains(b) && b.focus) { try { b.focus({preventScroll: true}); } catch (e) { b.focus(); } }
+}
+function lbPrep(root){
+  $$('img', root).forEach(function(im){ if (lbImg(im) && !im.hasAttribute('tabindex')) im.tabIndex = 0; });
+}
+document.addEventListener('mousedown', function(ev){ if (lbImg(ev.target)) ev.preventDefault(); }, true);
+document.addEventListener('click', function(ev){
+  var im = lbImg(ev.target);
+  if (!im || ev.button || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+  ev.preventDefault(); ev.stopPropagation(); openLightbox(im);
+}, true);
+document.addEventListener('keydown', function(ev){
+  if (LB && !LB.hidden) {
+    ev.stopPropagation();
+    if (ev.key === 'Escape' || ev.key === 'Esc') { ev.preventDefault(); closeLightbox(); }
+    else if (ev.key === 'Tab') { ev.preventDefault(); LB.querySelector('.lb-close').focus(); }
+    return;
+  }
+  var im = (ev.key === 'Enter' || ev.key === ' ') && ev.target && ev.target.tagName === 'IMG' ? lbImg(ev.target) : null;
+  if (im) { ev.preventDefault(); ev.stopPropagation(); openLightbox(im); }
+}, true);
 
 buildNav(); setEditMode(kvGet(LS_E) !== '0'); route(); renderCmList();
 })();
