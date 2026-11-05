@@ -1,4 +1,9 @@
 :root{--topbar-h:50px;--nav-w:350px}
+/* designer- og deltakermodus (leser 1.8): deltakermodus viser kurset slik en lærer ser det */
+body.mode-deltaker .dz-only,body:not(.mode-deltaker) .dp-only{display:none!important}
+body.mode-deltaker #doc .nb-num,body.mode-deltaker #doc .cm-btn,body.mode-deltaker #doc .rm-btn,body.mode-deltaker #doc .rm-ph,body.mode-deltaker #doc .rm-flag,body.mode-deltaker #doc .ed-flag,body.mode-deltaker #doc .editor-notes,body.mode-deltaker #doc .hidden-meta,body.mode-deltaker #doc .src-path,body.mode-deltaker #doc .fm-box,body.mode-deltaker #linkPop,body.mode-deltaker #rowRm,body.mode-deltaker #searchResults .badge{display:none!important}
+#modeSwitch .btn{white-space:nowrap}
+@media print{body.mode-deltaker #topbar,body.mode-deltaker #navPane,body.mode-deltaker .prevnext,body.mode-deltaker .breadcrumb,body.mode-deltaker #footer,body.mode-deltaker .quiz-actions{display:none!important}}
 #topbar{height:var(--topbar-h)}
 #content{padding:1rem}
 #doc{max-width:880px;margin:0 auto;padding-left:4.6rem;padding-right:2.6rem;line-height:1.6}

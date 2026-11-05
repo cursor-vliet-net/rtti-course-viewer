@@ -6,21 +6,22 @@
 <title>RTTI-kurs - leser</title>
 <link rel="stylesheet" href="assets/vendor/bootstrap/bootstrap.min.css">
 <link rel="stylesheet" href="assets/vendor/fontawesome/css/all.min.css">
-<link rel="stylesheet" href="assets/app.css?v=20261105120927">
+<link rel="stylesheet" href="assets/app.css?v=20261105150512">
 <script>try{var t=localStorage.getItem('rttiViewer.theme');if(t)document.documentElement.setAttribute('data-bs-theme',t);}catch(e){}</script>
 </head>
 <body>
 <nav class="navbar navbar-expand bg-body-tertiary border-bottom px-2" id="topbar">
   <button class="btn btn-outline-secondary btn-sm d-lg-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#navPane" aria-label="Meny"><i class="fa-solid fa-bars"></i></button>
-  <a class="navbar-brand fs-6 fw-semibold" href="#"><i class="fa-solid fa-layer-group me-1 text-primary"></i>RTTI-kurs <span class="text-body-secondary fw-normal d-none d-sm-inline">leser og tilbakemelding</span></a>
-  <div class="ms-auto d-flex gap-2">
-    <div class="form-check form-switch mb-0 d-flex align-items-center me-1" title="Slå redigering i teksten på eller av. Av = ren lesing."><input class="form-check-input" type="checkbox" role="switch" id="editToggle" checked><label class="form-check-label small ms-1 text-nowrap" for="editToggle"><i class="fa-solid fa-i-cursor me-1"></i><span class="d-none d-md-inline">Redigering </span><span id="editState" class="fw-semibold">på</span></label></div>
-    <a class="btn btn-sm btn-outline-secondary" href="#d-H" title="Hjelp"><i class="fa-solid fa-circle-question"></i><span class="d-none d-md-inline ms-1">Hjelp</span></a>
-    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#cmPane" title="Mine kommentarer"><i class="fa-solid fa-comments"></i><span class="d-none d-md-inline ms-1">Mine kommentarer</span> <span class="badge text-bg-primary" id="cmTotal">0</span><span class="badge text-bg-warning ms-1 d-none" id="cmNew">0</span></button>
+  <a class="navbar-brand fs-6 fw-semibold" href="#"><i class="fa-solid fa-layer-group me-1 text-primary"></i>RTTI-kurs <span class="text-body-secondary fw-normal d-none d-sm-inline dz-only">leser og tilbakemelding</span></a>
+  <div class="ms-auto d-flex gap-2 align-items-center">
+    <div class="btn-group btn-group-sm" role="group" aria-label="Visning" id="modeSwitch"><button type="button" class="btn btn-outline-secondary active" data-mode="designer" aria-pressed="true" aria-label="Designer" title="Designer: referansenumre, redigering, kommentarer, notater og eksport"><i class="fa-solid fa-pen-ruler"></i><span class="d-none d-sm-inline ms-1">Designer</span></button><button type="button" class="btn btn-outline-secondary" data-mode="deltaker" aria-pressed="false" aria-label="Deltaker" title="Deltaker: kurset slik en lærer ser det, uten referansenumre, redigering og notater"><i class="fa-solid fa-user-graduate"></i><span class="d-none d-sm-inline ms-1">Deltaker</span></button></div>
+    <div class="form-check form-switch mb-0 d-flex align-items-center me-1 dz-only" title="Slå redigering i teksten på eller av. Av = ren lesing."><input class="form-check-input" type="checkbox" role="switch" id="editToggle" checked><label class="form-check-label small ms-1 text-nowrap" for="editToggle"><i class="fa-solid fa-i-cursor me-1"></i><span class="d-none d-md-inline">Redigering </span><span id="editState" class="fw-semibold">på</span></label></div>
+    <a class="btn btn-sm btn-outline-secondary dz-only" href="#d-H" title="Hjelp"><i class="fa-solid fa-circle-question"></i><span class="d-none d-md-inline ms-1">Hjelp</span></a>
+    <button class="btn btn-sm btn-outline-primary dz-only" type="button" id="cmPaneBtn" data-bs-toggle="offcanvas" data-bs-target="#cmPane" title="Mine kommentarer"><i class="fa-solid fa-comments"></i><span class="d-none d-md-inline ms-1">Mine kommentarer</span> <span class="badge text-bg-primary" id="cmTotal">0</span><span class="badge text-bg-warning ms-1 d-none" id="cmNew">0</span></button>
     <button class="btn btn-sm btn-outline-secondary" type="button" id="themeBtn" title="Lyst/mørkt tema"><i class="fa-solid fa-circle-half-stroke"></i></button>
   </div>
 </nav>
-<div id="editBanner" class="d-none small px-3 py-1 border-bottom"><button type="button" class="btn-close float-end mt-1" id="editBannerClose" aria-label="Skjul tipset" title="Skjul tipset" style="font-size:.6rem"></button><i class="fa-solid fa-i-cursor me-1"></i><b>Redigering er på:</b> klikk rett i teksten og skriv. Endringer lagres automatisk som forslag i denne nettleseren. Enter eller klikk utenfor lagrer, Esc angrer, Shift+Enter gir linjeskift, Ctrl+klikk åpner en lenke, søppelbøtta fjerner et element. Slå av <b>Redigering</b> øverst for ren lesing.</div>
+<div id="editBanner" class="d-none dz-only small px-3 py-1 border-bottom"><button type="button" class="btn-close float-end mt-1" id="editBannerClose" aria-label="Skjul tipset" title="Skjul tipset" style="font-size:.6rem"></button><i class="fa-solid fa-i-cursor me-1"></i><b>Redigering er på:</b> klikk rett i teksten og skriv. Endringer lagres automatisk som forslag i denne nettleseren. Enter eller klikk utenfor lagrer, Esc angrer, Shift+Enter gir linjeskift, Ctrl+klikk åpner en lenke, søppelbøtta fjerner et element. Slå av <b>Redigering</b> øverst for ren lesing.</div>
 <div id="layout">
   <aside class="offcanvas-lg offcanvas-start" tabindex="-1" id="navPane" aria-label="Innhold">
     <div class="offcanvas-header d-lg-none border-bottom">
@@ -32,7 +33,7 @@
         <div class="input-group input-group-sm">
           <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
           <input type="search" class="form-control" id="searchBox" placeholder="Søk i all tekst ..." autocomplete="off">
-          <select class="form-select flex-grow-0 w-auto" id="searchScope" title="Søk i">
+          <select class="form-select flex-grow-0 w-auto dz-only" id="searchScope" title="Søk i">
             <option value="">Alt</option><option value="kurs">Kurs</option><option value="plan">Plan</option><option value="kilder">Kilder</option>
           </select>
         </div>
@@ -44,7 +45,7 @@
   <main id="content">
     <article id="doc"></article>
     <footer class="text-body-secondary small border-top mt-5 pt-2 pb-4" id="footer">
-      <i class="fa-regular fa-clock me-1"></i>Sist bygget: 05.11.2026 kl. 12:09 (Europe/Oslo) &middot; leser v1.7 &middot; generert av <code>build_viewer.py</code>
+      <span class="dz-only"><i class="fa-regular fa-clock me-1"></i>Sist bygget: 05.11.2026 kl. 15:05 (Europe/Oslo) &middot; leser v1.8 &middot; generert av <code>build_viewer.py</code></span><span class="dp-only">RTTI-kurs</span>
     </footer>
   </main>
 </div>
@@ -146,7 +147,7 @@
 <button type="button" id="linkPop" class="btn btn-sm btn-light border shadow-sm d-none" tabindex="-1"><i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Åpne lenke</button>
 <button type="button" id="rowRm" class="btn btn-sm btn-light border shadow-sm text-danger d-none" tabindex="-1" aria-label="Fjern tabellraden"><i class="fa-regular fa-trash-can"></i></button>
 <script src="assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="assets/data.js?v=20261105120927" charset="utf-8"></script>
-<script src="assets/app.js?v=20261105120927" charset="utf-8"></script>
+<script src="assets/data.js?v=20261105150512" charset="utf-8"></script>
+<script src="assets/app.js?v=20261105150512" charset="utf-8"></script>
 </body>
 </html>

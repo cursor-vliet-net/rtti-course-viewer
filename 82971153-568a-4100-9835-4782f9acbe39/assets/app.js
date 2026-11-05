@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 var V = window.VIEWER;
-var LS_C = 'rttiViewer.comments.v1', LS_T = 'rttiViewer.theme', LS_E = 'rttiViewer.editMode', LS_X = 'rttiViewer.lastExport';
+var LS_C = 'rttiViewer.comments.v1', LS_T = 'rttiViewer.theme', LS_E = 'rttiViewer.editMode', LS_X = 'rttiViewer.lastExport', LS_M = 'rttiViewer.mode';
 function $(s, r){ return (r || document).querySelector(s); }
 function $$(s, r){ return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
 function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -89,7 +89,39 @@ function buildNode(n, depth){
   if (kids.length) { var ul = document.createElement('ul'); kids.forEach(function(k){ ul.appendChild(buildNode(k, depth + 1)); }); li.appendChild(ul); }
   return li;
 }
-function buildNav(){ var ul = document.createElement('ul'); V.nav.forEach(function(n){ ul.appendChild(buildNode(n, 0)); }); $('#navTree').appendChild(ul); }
+/* ---------- designer- og deltakermodus (leser 1.8) ---------- */
+/* Deltaker: bare kursdelene (A.1, A.2 ...), kildeteksten uten referansenumre, notater og lokale endringer. */
+var MODE = 'designer', PDOCS = [];
+function isPart(){ return MODE === 'deltaker'; }
+function partDoc(id){ var d = V.docs[id]; return !!d && d.k === 'lesson'; }
+function partNav(){
+  var out = [];
+  V.nav.forEach(function(g){
+    var mods = (g.c || []).map(function(m){ var kids = (m.c || []).filter(function(k){ return k.d && partDoc(k.d); }); return kids.length ? {t: m.t, i: m.i, c: kids, open: true} : null; }).filter(Boolean);
+    if (mods.length) out.push({t: 'Kurs', i: g.i, c: mods, open: true});
+  });
+  return out;
+}
+(function walk(ns){ ns.forEach(function(n){ if (n.d && partDoc(n.d) && PDOCS.indexOf(n.d) < 0) PDOCS.push(n.d); walk(n.c || []); }); })(V.nav);
+function startDoc(){ return isPart() ? (PDOCS[0] || V.start) : V.start; }
+function parseHash(){
+  var h = decodeURIComponent(location.hash.slice(1)), o = {};
+  if (/(^|&)(modus|del|til)=/.test(h)) h.split('&').forEach(function(p){ var i = p.indexOf('='); if (i > 0) o[p.slice(0, i)] = p.slice(i + 1); else if (p) o.til = p; });
+  else if (h) o.til = h;
+  return o;
+}
+function validMode(m){ return m === 'deltaker' || m === 'designer'; }
+function applyMode(m){
+  if (ED) { ED.body.blur(); finishEdit(); }
+  MODE = m === 'deltaker' ? 'deltaker' : 'designer';
+  document.body.classList.toggle('mode-deltaker', isPart()); document.body.classList.toggle('mode-designer', !isPart());
+  $$('#modeSwitch [data-mode]').forEach(function(b){ var on = b.dataset.mode === MODE; b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.classList.toggle('active', on); });
+  if (isPart()) document.body.classList.remove('edit-mode'); else setEditMode(kvGet(LS_E) !== '0');
+  hideLinkPop(); hideRowRm();
+  $('#navTree').innerHTML = ''; navByDoc = {}; navByAnchor = {}; buildNav();
+  if ($('#searchBox').value) doSearch();
+}
+function buildNav(){ var ul = document.createElement('ul'); (isPart() ? partNav() : V.nav).forEach(function(n){ ul.appendChild(buildNode(n, 0)); }); $('#navTree').appendChild(ul); }
 function openAncestors(el){ var p = el; while (p && p.id !== 'navTree') { if (p.classList && p.classList.contains('nav-node')) p.classList.add('open'); p = p.parentNode; } }
 function markNav(id){
   $$('.nav-row.active').forEach(function(r){ r.classList.remove('active'); });
@@ -260,15 +292,27 @@ function render(id){
   if (ED) finishEdit();
   hideLinkPop(); closeLightbox();
   var d = V.docs[id]; current = id; ORIG = {};
+  var P = isPart(), pi = PDOCS.indexOf(id), prev = P ? (pi > 0 ? PDOCS[pi - 1] : null) : d.prev, next = P ? (pi >= 0 && pi + 1 < PDOCS.length ? PDOCS[pi + 1] : null) : d.next;
   var cr = '<nav aria-label="brødsmulesti"><ol class="breadcrumb small mb-2">';
-  cr += '<li class="breadcrumb-item"><a href="#d-' + esc(V.start) + '" title="Start"><i class="fa-solid fa-house"></i></a></li>';
+  cr += '<li class="breadcrumb-item"><a href="#d-' + esc(startDoc()) + '" title="Start"><i class="fa-solid fa-house"></i></a></li>';
   d.cr.forEach(function(c){ cr += '<li class="breadcrumb-item">' + esc(c) + '</li>'; });
   cr += '<li class="breadcrumb-item active" aria-current="page">' + esc(d.t) + '</li></ol></nav>';
   var pn = '<nav class="prevnext d-flex justify-content-between gap-2 mt-5 pt-3 border-top">';
-  pn += d.prev ? '<a class="btn btn-outline-secondary btn-sm text-start" href="#d-' + esc(d.prev) + '"><i class="fa-solid fa-arrow-left me-1"></i>Forrige: ' + esc(V.docs[d.prev].t) + '</a>' : '<span></span>';
-  pn += d.next ? '<a class="btn btn-outline-secondary btn-sm text-end" href="#d-' + esc(d.next) + '">Neste: ' + esc(V.docs[d.next].t) + '<i class="fa-solid fa-arrow-right ms-1"></i></a>' : '<span></span>';
+  pn += prev ? '<a class="btn btn-outline-secondary btn-sm text-start" href="#d-' + esc(prev) + '"><i class="fa-solid fa-arrow-left me-1"></i>Forrige: ' + esc(V.docs[prev].t) + '</a>' : '<span></span>';
+  pn += next ? '<a class="btn btn-outline-secondary btn-sm text-end" href="#d-' + esc(next) + '">Neste: ' + esc(V.docs[next].t) + '<i class="fa-solid fa-arrow-right ms-1"></i></a>' : '<span></span>';
   pn += '</nav>';
   art.innerHTML = cr + d.h + pn;
+  if (P) {   /* deltakermodus: bare publisert kildetekst, ingen lokale endringer, fjerninger eller notater */
+    $$('.nb-num, .editor-notes, .hidden-meta', art).forEach(function(n){ n.remove(); });
+    $$('a[href^="#"]', art).forEach(function(a){
+      var h = decodeURIComponent(a.getAttribute('href').slice(1)), doc = h.split('-')[1];
+      if (/^[dsp]-/.test(h) && !partDoc(doc)) { var s = document.createElement('span'); s.innerHTML = a.innerHTML; a.parentNode.replaceChild(s, a); }
+    });
+    hydrateQuiz(art); markNav(id); lbPrep(art);
+    document.title = d.t + ' - RTTI-kurs';
+    scroller().scrollTop = 0;
+    return;
+  }
   $$('[data-ref]', art).forEach(prepare);
   var c = loadC();
   Object.keys(c).forEach(function(a){ if (c[a].ch && ORIG[a]) applyItem(document.getElementById(a), c); });
@@ -339,10 +383,13 @@ function undoChange(a){
 }
 function flash(el){ el.classList.remove('hl'); void el.offsetWidth; el.classList.add('hl'); }
 function route(){
-  var h = decodeURIComponent(location.hash.slice(1));
+  var o = parseHash();
+  if (validMode(o.modus) && o.modus !== MODE) { applyMode(o.modus); current = null; }
+  var h = o.til || (o.del ? 'd-' + o.del : '');
   if (h === 'hjelp') h = 'd-H';
   var parts = h.split('-'), type = parts[0], doc = parts[1];
-  if (!h || !V.docs[doc] || 'dsp'.indexOf(type) < 0 || type.length !== 1) { if (!current) render(V.start); return; }
+  if (!h || !V.docs[doc] || 'dsp'.indexOf(type) < 0 || type.length !== 1) { if (!current) render(startDoc()); return; }
+  if (isPart() && !partDoc(doc)) { if (current !== startDoc()) render(startDoc()); return; }   /* ikke med i deltakermodus */
   if (current !== doc) render(doc);
   if (type === 'd') { scroller().scrollTop = 0; return; }
   var el = document.getElementById(h);
@@ -445,6 +492,7 @@ function setEditable(el, body){
   } else { ['contenteditable', 'spellcheck', 'role', 'aria-label'].forEach(function(k){ body.removeAttribute(k); }); }
 }
 function setEditMode(on){
+  if (isPart()) { document.body.classList.remove('edit-mode'); return; }   /* deltakermodus: aldri redigering, lagret valg røres ikke */
   if (!on && ED) { ED.body.blur(); finishEdit(); }
   document.body.classList.toggle('edit-mode', on);
   var t = $('#editToggle'); t.checked = on;
@@ -1129,7 +1177,7 @@ function doSearch(){
   var terms = q.split(/\s+/), res = [];
   for (var i = 0; i < V.index.length && res.length < 150; i++) {
     var e = V.index[i], d = V.docs[e[1]];
-    if (scope && d.g !== scope) continue;
+    if (isPart() ? !partDoc(e[1]) : (scope && d.g !== scope)) continue;
     var lc = IDX[e[0]].lc, ok = terms.every(function(t){ return lc.indexOf(t) >= 0; });
     if (ok) res.push(e);
   }
@@ -1214,5 +1262,13 @@ document.addEventListener('keydown', function(ev){
   if (im) { ev.preventDefault(); ev.stopPropagation(); openLightbox(im); }
 }, true);
 
-buildNav(); setEditMode(kvGet(LS_E) !== '0'); route(); renderCmList();
+$('#modeSwitch').addEventListener('click', function(ev){
+  var b = ev.target.closest('[data-mode]'); if (!b || b.dataset.mode === MODE) return;
+  var doc = current; applyMode(b.dataset.mode); kvSet(LS_M, MODE);
+  if (isPart() && !partDoc(doc)) doc = startDoc();
+  current = null; history.replaceState(null, '', '#d-' + doc); route();
+  toast(isPart() ? 'Deltakermodus: kurset slik en lærer ser det. Endringene dine er tatt vare på.' : 'Designermodus: referansenumre, redigering og kommentarer er tilbake.');
+});
+var h0 = parseHash(); MODE = validMode(h0.modus) ? h0.modus : (kvGet(LS_M) === 'deltaker' ? 'deltaker' : 'designer');
+applyMode(MODE); route(); renderCmList();
 })();
